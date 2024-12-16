@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aanmaken Online Profiel</title>
+    <style>
+        /* Stijlen zoals eerder */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f8fb;
+        }
+
+        .form-container {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .form-container h1 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #005b8f;
+        }
+
+        .form-container label {
+            display: block;
+            text-align: left;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #00457c;
+        }
+
+        .form-container select,
+        .form-container input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #d9d9d9;
+            border-radius: 5px;
+            font-size: 1rem;
+            color: #333;
+            background-color: #f9f9f9;
+        }
+
+        .form-container input::placeholder {
+            color: #a9a9a9;
+        }
+
+        .form-container button {
+            width: 100%;
+            padding: 12px;
+            background-color: #f47d32;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .form-container button:hover {
+            background-color: #d56628;
+        }
+
+        .response-message {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .response-message.success {
+            color: green;
+        }
+
+        .response-message.error {
+            color: red;
+        }
+
+        .response-data,
+        .error-data {
+            text-align: left;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            font-size: 0.9rem;
+        }
+
+        .response-data strong,
+        .error-data strong {
+            color: #00457c;
+        }
+
+        .error-data {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>Aanmaken Online Profiel</h1>
+        <form id="logicAppForm">
+            <label for="environment">Selecteer omgeving</label>
+            <select id="environment" name="environment">
+                <option value="acceptatie">Acceptatie</option>
+                <option value="test">Test</option>
+            </select>
+
+            <label for="email">e-mailadres</label>
+            <input type="email" id="email" name="email" placeholder="Uw e-mailadres" required>
+
+            <label for="contactid">ContactID</label>
+            <input type="text" id="contactid" name="contactid" placeholder="Uw Contact ID" required>
+
+            <label for="type">Type</label>
+            <input type="text" id="type" name="type" placeholder="type" required>
+
+            <button type="submit">Aanmaken</button>
+        </form>
+        <div id="responseMessage" class="response-message"></div>
+        <div id="responseData" class="response-data" style="display: none;"></div>
+        <div id="errorData" class="error-data" style="display: none;"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('logicAppForm');
+        const responseMessage = document.getElementById('responseMessage');
+        const responseData = document.getElementById('responseData');
+        const errorData = document.getElementById('errorData');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Voorkom standaard formulierinzending
+            
+            // Haal de formuliergegevens op
+            const environment = document.getElementById('environment').value;
+            const email = document.getElementById('email').value;
+            const contactid = document.getElementById('contactid').value;
+            const type = document.getElementById('type').value;
+
+            // Logic App URL's
+            const endpoints = {
+                acceptatie: "https://prod-233.westeurope.logic.azure.com:443/workflows/770b85e775894ff8b32fc7e55829a3a3/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=x7yaqjGakMAG9C6EHvNZMK3jGQzL1kmWwqyKr7yTLi8",
+                test: "https://prod-54.westeurope.logic.azure.com:443/workflows/034acec16ac84dbfbbab5d7a92c291a5/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=SBry0iT_WgPcvBN1585quJCiqZygbnKbx7if7kTOIhk"
+            };
+
+            const logicAppUrl = endpoints[environment];
+
+            try {
+                // Verstuur een POST-verzoek naar de geselecteerde Logic App URL
+                const response = await fetch(logicAppUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ email, contactid, type })
+                });
+
+                // Verwerk de response
+                if (response.ok) {
+                    const responseDataJson = await response.json(); // Neem aan dat de response JSON is
+                    responseMessage.textContent = "Success: Online profiel aangemaakt!";
+                    responseMessage.classList.add('success');
+                    responseMessage.classList.remove('error');
+
+                    // Maak de JSON-data netjes op
+                    responseData.innerHTML = `
+                        <strong>Email:</strong> ${responseDataJson.email}<br>
+                        <strong>Password:</strong> ${responseDataJson.password}<br>
+                        <strong>Environment:</strong> ${responseDataJson.environment}
+                    `;
+                    responseData.style.display = "block";
+                    errorData.style.display = "none";
+                } else {
+                    const errorResponseJson = await response.json(); // Verwerk fouten als JSON
+                    responseMessage.textContent = "Er is een fout opgetreden.";
+                    responseMessage.classList.add('error');
+                    responseMessage.classList.remove('success');
+
+                    // Toon het foutbericht netjes
+                    errorData.innerHTML = `
+                        <strong>Error Code:</strong> ${errorResponseJson.error_code}<br>
+                        <strong>Message:</strong> ${errorResponseJson.error_message}
+                    `;
+                    errorData.style.display = "block";
+                    responseData.style.display = "none";
+                }
+            } catch (error) {
+                // Toon fout bij netwerkproblemen of andere issues
+                responseMessage.textContent = "Netwerkfout: " + error.message;
+                responseMessage.classList.add('error');
+                responseMessage.classList.remove('success');
+                errorData.style.display = "none";
+                responseData.style.display = "none";
+            }
+        });
+    </script>
+</body>
+</html>
